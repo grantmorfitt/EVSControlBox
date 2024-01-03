@@ -1,0 +1,89 @@
+#Author: Grant Morfitt
+
+import time
+import random
+
+import win32gui
+import win32con
+import win32api
+import socket
+
+subscribed = False
+
+UDP_PORT = 5007
+UDP_IP = "192.168.72.111"
+
+AlphaActive = True #By default they will be active
+BetaActive = True
+CharlieActive = True
+DeltaActive = True
+
+AlphaPrevState = 0
+AlphaCurrentState = 0
+
+BetaPrevState = 0
+BetaCurrentState = 0
+
+CharliePrevState = 0
+CharlieCurrentState = 0
+
+DeltaPrevState = 0
+CharlieCurrentState = 0
+
+def ToggleAlpha():
+    AlphaActive = not AlphaActive
+def ToggleBeta():
+    BetaActive = not BetaActive
+def ToggleCharlie():
+    CharlieActive = not BetaActive  
+    
+    
+def ProcessMessage(messagePayload): #Fires when message recieved
+        global AlphaPrevState
+        global AlphaCurrentState
+        global BetaPrevState
+
+        hudControl = messagePayload[0:1]
+        evsControl = messagePayload[1:2]
+
+        AlphaCurrentState = hudControl
+        BetaCurrentState = evsControl
+        
+        if AlphaCurrentState != AlphaPrevState:
+            print("HUD State Changed! Sending key")
+            win32api.SendMessage(hwnd, win32con.WM_KEYDOWN, 0x48, 0);
+            win32api.SendMessage(hwnd, win32con.WM_KEYUP, 0x48, 0);
+            AlphaPrevState = hudControl
+            
+        if BetaCurrentState != BetaPrevState:
+            print("EVS State Changed! Sending key")
+            win32api.SendMessage(hwnd, win32con.WM_KEYDOWN, 0x58, 0);
+            win32api.SendMessage(hwnd, win32con.WM_KEYUP, 0x58, 0);
+            BetaPrevState = evsControl
+        
+
+        print(f"\nAlphaActive: {hudControl}")
+        print(f"BetaActive: {evsControl}")
+         
+
+
+def main():
+    print("Progran start")
+    global hwnd;
+    hwnd = win32gui.FindWindow("X-System", "X-System")
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP, UDP_PORT))
+    print(f"{UDP_IP}:{UDP_PORT}")
+    
+    while True:
+        data, addr = sock.recvfrom(1024)
+        #print(f"Receive from: {addr} msg: {data}")
+        message = data.decode()
+        ProcessMessage(message)
+if __name__ == '__main__':
+    main()
+
+
+
+ 
